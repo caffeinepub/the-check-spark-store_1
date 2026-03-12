@@ -29,20 +29,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Loader2,
-  Package,
-  PlusCircle,
-  Shield,
-  ShieldOff,
-  Trash2,
-} from "lucide-react";
+import { Loader2, Package, PlusCircle, Shield, Trash2 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Category } from "../backend.d";
 import { useActor } from "../hooks/useActor";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
 const CATEGORIES = [
   { value: Category.allJewellery, label: "All Jewellery" },
@@ -81,20 +73,8 @@ const defaultForm = {
 
 export function AdminPage() {
   const { actor, isFetching } = useActor();
-  const { identity, loginStatus } = useInternetIdentity();
   const queryClient = useQueryClient();
   const [form, setForm] = useState(defaultForm);
-
-  const isLoggedIn = loginStatus === "success" && identity;
-
-  const { data: isAdmin, isLoading: isAdminLoading } = useQuery({
-    queryKey: ["isAdmin"],
-    queryFn: async () => {
-      if (!actor) return false;
-      return actor.isCallerAdmin();
-    },
-    enabled: !!actor && !isFetching && !!isLoggedIn,
-  });
 
   const { data: products, isLoading: productsLoading } = useQuery({
     queryKey: ["allProducts"],
@@ -102,7 +82,7 @@ export function AdminPage() {
       if (!actor) return [];
       return actor.getAllProducts();
     },
-    enabled: !!actor && !isFetching && !!isAdmin,
+    enabled: !!actor && !isFetching,
   });
 
   const addMutation = useMutation({
@@ -143,53 +123,6 @@ export function AdminPage() {
     }
     addMutation.mutate();
   };
-
-  // Not logged in
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Card className="max-w-md w-full text-center border-border shadow-bloom">
-          <CardContent className="pt-8 pb-8">
-            <ShieldOff className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
-              Admin Access Required
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              Please log in with your admin account to access this page.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Checking admin status
-  if (isAdminLoading || isFetching) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Not admin
-  if (isAdmin === false) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Card className="max-w-md w-full text-center border-border shadow-bloom">
-          <CardContent className="pt-8 pb-8">
-            <ShieldOff className="w-12 h-12 text-destructive mx-auto mb-4" />
-            <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
-              Admin Access Required
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              Please log in with your admin account to manage products.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <TooltipProvider>

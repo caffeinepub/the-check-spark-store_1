@@ -85,6 +85,27 @@ const VALUES = [
   },
 ];
 
+const TIMELINE = [
+  {
+    year: "2024",
+    title: "Where It All Began",
+    desc: "The Chic Spark Store was born from a heartfelt passion for jewellery and handcrafted beauty. Starting as a small, intimate venture, we began curating and creating pieces that told stories — each necklace, bracelet, and accessory carefully chosen to make every woman feel truly extraordinary. Word spread through love, trust, and the joy of every happy customer.",
+    emoji: "🌱",
+  },
+  {
+    year: "2025",
+    title: "Growing in Full Bloom",
+    desc: "With a growing community of loyal customers and a deepened love for our craft, we expanded our collection to include more categories — from hair accessories and bags to fully customized gift hampers. Every order was packed with care, every piece shipped with warmth. The spark had become a flame.",
+    emoji: "🌸",
+  },
+  {
+    year: "2026",
+    title: "Our Official Website Launch",
+    desc: "In 2026, The Chic Spark Store proudly launched its official website — a dedicated home for our blossoming collection. Now anyone, anywhere, can discover our jewellery, shop their favourite pieces, and send gifts to the people they love. This is only the beginning of our most exciting chapter yet.",
+    emoji: "✨",
+  },
+];
+
 export function AboutPage() {
   return (
     <main className="min-h-screen pb-16">
@@ -107,11 +128,11 @@ export function AboutPage() {
             </span>
           </div>
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground leading-tight mb-4">
-            About The Check Spark Store
+            About The Chic Spark Store
           </h1>
           <p className="text-lg text-muted-foreground leading-relaxed">
             Where jewellery blooms like cherry blossoms — fleeting, beautiful,
-            and deeply meaningful.
+            and deeply meaningful. Est. 2024.
           </p>
         </motion.div>
         <div
@@ -139,7 +160,7 @@ export function AboutPage() {
             </h2>
           </div>
           <p className="text-foreground/70 leading-relaxed text-base">
-            The Check Spark Store was born from a deep love of handcrafted
+            The Chic Spark Store was born from a deep love of handcrafted
             beauty. Founded by passionate artisans who believe that every woman
             deserves to wear something that makes her feel extraordinary, we
             create jewellery and accessories that carry meaning, emotion, and
@@ -150,6 +171,54 @@ export function AboutPage() {
             crafted — from the delicate necklaces that rest close to your heart,
             to the intricate hair accessories that crown your beauty.
           </p>
+        </motion.section>
+
+        {/* Our Journey Timeline */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-primary" />
+            </div>
+            <h2 className="font-serif text-2xl font-semibold text-foreground">
+              Our Journey
+            </h2>
+          </div>
+          <div className="relative pl-6 border-l-2 border-primary/20 space-y-10">
+            {TIMELINE.map((item, i) => (
+              <motion.div
+                key={item.year}
+                className="relative"
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                viewport={{ once: true }}
+              >
+                {/* Dot */}
+                <span className="absolute -left-[1.65rem] top-1 w-5 h-5 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center">
+                  <span className="w-2 h-2 rounded-full bg-primary block" />
+                </span>
+                <div className="bg-gradient-to-br from-secondary/20 to-card rounded-2xl p-6 border border-border">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-xl">{item.emoji}</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-primary">
+                      {item.year}
+                    </span>
+                  </div>
+                  <h3 className="font-serif text-lg font-semibold text-foreground mb-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm text-foreground/70 leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </motion.section>
 
         {/* Cherry Blossom */}
@@ -275,8 +344,8 @@ export function AboutPage() {
 
       <footer className="py-8 px-6 border-t border-border text-center text-sm text-muted-foreground">
         <p>
-          © {new Date().getFullYear()}. Built with{" "}
-          <span className="text-accent-foreground">♥</span> using{" "}
+          © {new Date().getFullYear()} The Chic Spark Store. Est. 2024. Built
+          with <span className="text-accent-foreground">♥</span> using{" "}
           <a
             href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
             target="_blank"

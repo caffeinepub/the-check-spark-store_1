@@ -132,7 +132,7 @@ export function HomePage() {
         <div className="absolute inset-0">
           <img
             src="/assets/generated/hero-banner.dim_1200x400.jpg"
-            alt="The Check Spark Store Hero"
+            alt="The Chic Spark Store Hero"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-background/20" />
@@ -154,7 +154,7 @@ export function HomePage() {
               </span>
             </div>
             <h1 className="font-serif text-4xl md:text-6xl font-bold text-foreground leading-tight mb-4">
-              The Check Spark
+              The Chic Spark
               <br />
               <span className="text-primary italic">Store</span>
             </h1>

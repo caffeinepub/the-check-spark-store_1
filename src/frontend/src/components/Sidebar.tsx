@@ -52,12 +52,12 @@ export function Sidebar({ cartCount }: SidebarProps) {
         <div className="w-20 h-20 mb-2 drop-shadow-md group-hover:scale-105 transition-transform duration-300">
           <img
             src="/assets/generated/cherry-blossom-logo-transparent.dim_300x300.png"
-            alt="The Check Spark Store Logo"
+            alt="The Chic Spark Store Logo"
             className="w-full h-full object-contain"
           />
         </div>
         <h1 className="font-serif text-center text-primary font-semibold leading-tight text-sm">
-          The Check Spark Store
+          The Chic Spark Store
         </h1>
         <div className="w-12 h-0.5 mt-3 bg-accent rounded-full" />
       </Link>
@@ -190,7 +190,7 @@ export function Sidebar({ cartCount }: SidebarProps) {
             className="w-8 h-8"
           />
           <span className="font-serif text-sm font-semibold text-primary">
-            The Check Spark Store
+            The Chic Spark Store
           </span>
         </Link>
         <div className="flex items-center gap-2">
