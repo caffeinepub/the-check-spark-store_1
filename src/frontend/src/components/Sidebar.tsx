@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import React, { useState } from "react";
+import { useAdminAuth } from "../hooks/useAdminAuth";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
 const CATEGORIES = [
@@ -35,6 +36,7 @@ export function Sidebar({ cartCount }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { login, clear, loginStatus, identity } = useInternetIdentity();
+  const { isAdmin } = useAdminAuth();
 
   const isLoggedIn = loginStatus === "success" && identity;
   const principal = identity?.getPrincipal().toString();
@@ -104,19 +106,22 @@ export function Sidebar({ cartCount }: SidebarProps) {
           <span>About Us</span>
         </Link>
 
-        <Link
-          to="/admin"
-          data-ocid="nav.link"
-          onClick={() => setMobileOpen(false)}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 mb-0.5 ${
-            location.pathname === "/admin"
-              ? "bg-primary/10 text-primary font-medium"
-              : "text-foreground/70 hover:bg-secondary hover:text-foreground"
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          <span>Admin Panel</span>
-        </Link>
+        {/* Admin Panel link — only visible when admin is authenticated */}
+        {isAdmin && (
+          <Link
+            to="/admin"
+            data-ocid="nav.link"
+            onClick={() => setMobileOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 mb-0.5 ${
+              location.pathname === "/admin"
+                ? "bg-primary/10 text-primary font-medium"
+                : "text-foreground/70 hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Admin Panel</span>
+          </Link>
+        )}
 
         <Link
           to="/cart"

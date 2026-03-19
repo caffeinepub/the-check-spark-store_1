@@ -29,12 +29,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Package, PlusCircle, Shield, Trash2 } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  LogOut,
+  Package,
+  PlusCircle,
+  Shield,
+  Trash2,
+} from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Category } from "../backend.d";
 import { useActor } from "../hooks/useActor";
+import { useAdminAuth } from "../hooks/useAdminAuth";
 
 const CATEGORIES = [
   { value: Category.allJewellery, label: "All Jewellery" },
@@ -71,77 +82,150 @@ const defaultForm = {
   inStock: true,
 };
 
+function AdminLoginGate({ onLogin }: { onLogin: (pw: string) => boolean }) {
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = onLogin(password);
+    if (!success) {
+      setError("Incorrect password. Please try again.");
+      setPassword("");
+    }
+  };
+
+  return (
+    <main className="min-h-screen flex items-center justify-center p-4">
+      <Card className="w-full max-w-sm border-border shadow-petal">
+        <CardHeader className="pb-4 text-center">
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+            <Lock className="w-7 h-7 text-primary" />
+          </div>
+          <CardTitle className="font-serif text-xl">Admin Access</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Enter your admin password to continue
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-password" className="text-sm font-medium">
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="admin-password"
+                  data-ocid="admin_login.password.input"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError("");
+                  }}
+                  className="border-input pr-10"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              {error && (
+                <p
+                  data-ocid="admin_login.error_state"
+                  className="text-xs text-destructive mt-1"
+                >
+                  {error}
+                </p>
+              )}
+            </div>
+            <Button
+              type="submit"
+              data-ocid="admin_login.submit_button"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              Unlock Admin Panel
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </main>
+  );
+}
+
 export function AdminPage() {
   const { actor, isFetching } = useActor();
   const queryClient = useQueryClient();
   const [form, setForm] = useState(defaultForm);
+  const { isAdmin, login, logout } = useAdminAuth();
 
-  const { data: products, isLoading: productsLoading } = useQuery({
-    queryKey: ["allProducts"],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllProducts();
-    },
-    enabled: !!actor && !isFetching,
-  });
+  if (!isAdmin) {
+    return <AdminLoginGate onLogin={login} />;
+  }
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error("Not connected");
-      const priceNum = Number.parseFloat(form.price);
-      if (Number.isNaN(priceNum) || priceNum <= 0)
-        throw new Error("Invalid price");
-      return actor.addProduct({
-        id: 0n,
-        name: form.name.trim(),
-        description: form.description.trim(),
-        price: BigInt(Math.round(priceNum * 100)),
-        category: form.category,
-        imageUrl: form.imageUrl.trim(),
-        inStock: form.inStock,
-      });
-    },
-    onSuccess: () => {
-      toast.success("Product added successfully! 🌸");
-      setForm(defaultForm);
-      queryClient.invalidateQueries({ queryKey: ["allProducts"] });
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || "Failed to add product");
-    },
-  });
+  const ProductManager = () => {
+    const { data: products, isLoading: productsLoading } = useQuery({
+      queryKey: ["allProducts"],
+      queryFn: async () => {
+        if (!actor) return [];
+        return actor.getAllProducts();
+      },
+      enabled: !!actor && !isFetching,
+    });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name.trim()) {
-      toast.error("Product name is required");
-      return;
-    }
-    if (!form.price || Number.isNaN(Number.parseFloat(form.price))) {
-      toast.error("Valid price is required");
-      return;
-    }
-    addMutation.mutate();
-  };
+    const addMutation = useMutation({
+      mutationFn: async () => {
+        if (!actor) throw new Error("Not connected");
+        const priceNum = Number.parseFloat(form.price);
+        if (Number.isNaN(priceNum) || priceNum <= 0)
+          throw new Error("Invalid price");
+        return actor.addProduct({
+          id: 0n,
+          name: form.name.trim(),
+          description: form.description.trim(),
+          price: BigInt(Math.round(priceNum * 100)),
+          category: form.category,
+          imageUrl: form.imageUrl.trim(),
+          inStock: form.inStock,
+        });
+      },
+      onSuccess: () => {
+        toast.success("Product added successfully! 🌸");
+        setForm(defaultForm);
+        queryClient.invalidateQueries({ queryKey: ["allProducts"] });
+      },
+      onError: (err: Error) => {
+        toast.error(err.message || "Failed to add product");
+      },
+    });
 
-  return (
-    <TooltipProvider>
-      <main className="min-h-screen p-4 md:p-8 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Shield className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="font-serif text-2xl font-semibold text-foreground">
-              Admin Panel
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Manage your store products
-            </p>
-          </div>
-        </div>
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!form.name.trim()) {
+        toast.error("Product name is required");
+        return;
+      }
+      if (!form.price || Number.isNaN(Number.parseFloat(form.price))) {
+        toast.error("Valid price is required");
+        return;
+      }
+      addMutation.mutate();
+    };
 
+    return (
+      <>
         {/* Add Product Form */}
         <Card className="mb-8 border-border shadow-petal">
           <CardHeader className="pb-4">
@@ -153,7 +237,6 @@ export function AdminPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Product Name */}
                 <div className="space-y-1.5">
                   <Label htmlFor="product-name" className="text-sm font-medium">
                     Product Name <span className="text-destructive">*</span>
@@ -169,8 +252,6 @@ export function AdminPage() {
                     className="border-input"
                   />
                 </div>
-
-                {/* Price */}
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="product-price"
@@ -192,8 +273,6 @@ export function AdminPage() {
                     className="border-input"
                   />
                 </div>
-
-                {/* Category */}
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium">Category</Label>
                   <Select
@@ -217,8 +296,6 @@ export function AdminPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Image URL */}
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="product-image"
@@ -241,8 +318,6 @@ export function AdminPage() {
                   />
                 </div>
               </div>
-
-              {/* Description */}
               <div className="space-y-1.5">
                 <Label htmlFor="product-desc" className="text-sm font-medium">
                   Description
@@ -259,8 +334,6 @@ export function AdminPage() {
                   className="border-input resize-none"
                 />
               </div>
-
-              {/* In Stock toggle */}
               <div className="flex items-center gap-3">
                 <Switch
                   id="in-stock"
@@ -277,9 +350,7 @@ export function AdminPage() {
                   {form.inStock ? "In Stock" : "Out of Stock"}
                 </Label>
               </div>
-
               <Separator />
-
               <Button
                 type="submit"
                 data-ocid="admin.add_product.submit_button"
@@ -421,6 +492,41 @@ export function AdminPage() {
             )}
           </CardContent>
         </Card>
+      </>
+    );
+  };
+
+  return (
+    <TooltipProvider>
+      <main className="min-h-screen p-4 md:p-8 max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="font-serif text-2xl font-semibold text-foreground">
+                Admin Panel
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Manage your store products
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={logout}
+            data-ocid="admin.logout.button"
+            className="text-xs"
+          >
+            <LogOut className="w-3 h-3 mr-1" />
+            Lock
+          </Button>
+        </div>
+
+        <ProductManager />
 
         {/* Footer */}
         <footer className="mt-12 text-center text-xs text-muted-foreground pb-6">

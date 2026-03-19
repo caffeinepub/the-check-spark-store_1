@@ -8,6 +8,8 @@ import { motion } from "motion/react";
 import React from "react";
 import { toast } from "sonner";
 import type { Category } from "../backend.d";
+import { FakeRating } from "../components/FakeRating";
+import { STATIC_PRODUCTS } from "../data/staticProducts";
 import { useActor } from "../hooks/useActor";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -59,10 +61,18 @@ const SAMPLE_PRODUCTS = [
 
 const SKELETON_IDS = ["sk1", "sk2", "sk3", "sk4", "sk5", "sk6"];
 
+function showsStaticJhumkas(categoryId: string) {
+  return categoryId === "earrings" || categoryId === "allJewellery";
+}
+
 export function CategoryPage() {
   const { categoryId } = useParams({ from: "/category/$categoryId" });
   const { actor, isFetching } = useActor();
   const queryClient = useQueryClient();
+
+  const staticJhumkas = showsStaticJhumkas(categoryId)
+    ? STATIC_PRODUCTS.filter((p) => p.category === "earrings")
+    : [];
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["products", categoryId],
@@ -93,7 +103,8 @@ export function CategoryPage() {
 
   const label = CATEGORY_LABELS[categoryId] || categoryId;
   const emoji = CATEGORY_EMOJIS[categoryId] || "✨";
-  const hasProducts = products && products.length > 0;
+  const hasProducts =
+    (products && products.length > 0) || staticJhumkas.length > 0;
 
   return (
     <main className="min-h-screen pb-16">
@@ -146,13 +157,69 @@ export function CategoryPage() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            {products.map((product, idx) => (
+            {/* Static jhumka products first */}
+            {staticJhumkas.map((product, idx) => (
               <motion.div
-                key={product.id.toString()}
+                key={product.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.06, duration: 0.4 }}
                 data-ocid={`category.item.${idx + 1}`}
+              >
+                <div className="group bg-card rounded-2xl overflow-hidden border border-border hover:shadow-bloom hover:border-primary/20 transition-all duration-300 hover:-translate-y-1">
+                  <div className="aspect-square bg-secondary/30 overflow-hidden relative">
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide shadow">
+                      SALE
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-serif font-semibold text-foreground text-sm leading-tight">
+                      {product.name}
+                    </h3>
+                    <FakeRating
+                      seed={product.id}
+                      rating={product.rating}
+                      reviewCount={product.reviewCount}
+                      className="mt-1"
+                    />
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-primary font-semibold text-sm">
+                        ₹{product.price}
+                      </span>
+                      <span className="text-muted-foreground text-xs line-through">
+                        ₹{product.originalPrice}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="w-full mt-3 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 text-xs rounded-lg"
+                      onClick={() => toast.success("Added! 🌸")}
+                      data-ocid={`category.button.${idx + 1}`}
+                    >
+                      <ShoppingBag className="w-3 h-3 mr-1" />
+                      Add to Cart
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Backend products */}
+            {products?.map((product, idx) => (
+              <motion.div
+                key={product.id.toString()}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: (staticJhumkas.length + idx) * 0.06,
+                  duration: 0.4,
+                }}
+                data-ocid={`category.item.${staticJhumkas.length + idx + 1}`}
               >
                 <div className="group bg-card rounded-2xl overflow-hidden border border-border hover:shadow-bloom hover:border-primary/20 transition-all duration-300 hover:-translate-y-1">
                   <Link
@@ -182,6 +249,7 @@ export function CategoryPage() {
                         {product.name}
                       </h3>
                     </Link>
+                    <FakeRating seed={product.id.toString()} className="mt-1" />
                     <p className="text-primary font-semibold mt-1">
                       ₹{Number(product.price).toLocaleString()}
                     </p>
@@ -195,7 +263,7 @@ export function CategoryPage() {
                       className="w-full mt-3 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 text-xs rounded-lg"
                       onClick={() => addToCartMutation.mutate(product.id)}
                       disabled={!product.inStock || addToCartMutation.isPending}
-                      data-ocid={`category.button.${idx + 1}`}
+                      data-ocid={`category.button.${staticJhumkas.length + idx + 1}`}
                     >
                       <ShoppingBag className="w-3 h-3 mr-1" />
                       Add to Cart
