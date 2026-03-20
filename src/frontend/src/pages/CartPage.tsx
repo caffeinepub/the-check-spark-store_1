@@ -13,21 +13,28 @@ import {
   ShoppingBag,
   Trash2,
   Truck,
+  X,
 } from "lucide-react";
 import { motion } from "motion/react";
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { useLocalCart } from "../context/LocalCartContext";
+import { STATIC_PRODUCTS } from "../data/staticProducts";
 import { useActor } from "../hooks/useActor";
 
 const PETAL_ROTATIONS = [0, 72, 144, 216, 288];
 
 const SKELETON_IDS = ["csk1", "csk2", "csk3"];
 
+const DELIVERY_CHARGE = 49;
+const FREE_DELIVERY_THRESHOLD = 500;
+
 export function CartPage() {
   const { actor, isFetching } = useActor();
   const queryClient = useQueryClient();
   const [sendAsGift, setSendAsGift] = useState(false);
   const [giftMessage, setGiftMessage] = useState("");
+  const { localCartItems, removeLocalItem } = useLocalCart();
 
   const { data: cartItems, isLoading } = useQuery({
     queryKey: ["cart"],
@@ -80,15 +87,37 @@ export function CartPage() {
     return allProducts?.find((p) => p.id === productId);
   };
 
-  const totalAmount =
+  const getStaticProduct = (productId: string) => {
+    return STATIC_PRODUCTS.find((p) => p.id === productId);
+  };
+
+  const backendTotal =
     cartItems?.reduce((sum, item) => {
       const product = getProduct(item.productId);
       if (!product) return sum;
       return sum + Number(product.price) * Number(item.quantity);
     }, 0) ?? 0;
 
-  const itemCount =
+  const localTotal = localCartItems.reduce((sum, item) => {
+    const product = getStaticProduct(item.productId);
+    if (!product) return sum;
+    return sum + product.price * item.quantity;
+  }, 0);
+
+  const subtotal = backendTotal + localTotal;
+  const isFreeDelivery = subtotal >= FREE_DELIVERY_THRESHOLD;
+  const deliveryCharge = isFreeDelivery ? 0 : DELIVERY_CHARGE;
+  const totalAmount = subtotal + deliveryCharge;
+
+  const backendItemCount =
     cartItems?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0;
+  const localItemCount = localCartItems.reduce(
+    (sum, item) => sum + item.quantity,
+    0,
+  );
+  const itemCount = backendItemCount + localItemCount;
+
+  const hasAnyItems = itemCount > 0;
 
   return (
     <main className="min-h-screen pb-16">
@@ -109,7 +138,7 @@ export function CartPage() {
               🌸 Delivery in 7 to 14 working days
             </p>
             <p className="text-xs text-muted-foreground">
-              Handcrafted with care — worth the wait!
+              Free delivery on orders above ₹500 · ₹49 delivery charge otherwise
             </p>
           </div>
         </div>
@@ -136,7 +165,7 @@ export function CartPage() {
               <Skeleton key={id} className="h-24 w-full rounded-xl" />
             ))}
           </div>
-        ) : !cartItems || cartItems.length === 0 ? (
+        ) : !hasAnyItems ? (
           <motion.div
             className="text-center py-16"
             initial={{ opacity: 0, y: 20 }}
@@ -185,59 +214,123 @@ export function CartPage() {
           </motion.div>
         ) : (
           <div className="space-y-6">
-            {/* Cart Items */}
-            <div className="space-y-3">
-              {cartItems.map((item, idx) => {
-                const product = getProduct(item.productId);
-                return (
-                  <motion.div
-                    key={item.productId.toString()}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.06 }}
-                    className="flex items-center gap-4 bg-card rounded-2xl p-4 border border-border shadow-xs"
-                    data-ocid={`cart.item.${idx + 1}`}
-                  >
-                    <div className="w-16 h-16 rounded-xl bg-secondary/30 overflow-hidden flex-shrink-0">
-                      {product?.imageUrl ? (
+            {/* Local Static Cart Items */}
+            {localCartItems.length > 0 && (
+              <div className="space-y-3">
+                {localCartItems.map((item, idx) => {
+                  const product = getStaticProduct(item.productId);
+                  if (!product) return null;
+                  return (
+                    <motion.div
+                      key={item.productId}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.06 }}
+                      className="flex items-center gap-4 bg-card rounded-2xl p-4 border border-border shadow-xs"
+                      data-ocid={`cart.item.${idx + 1}`}
+                    >
+                      <div className="w-16 h-16 rounded-xl bg-secondary/30 overflow-hidden flex-shrink-0">
                         <img
                           src={product.imageUrl}
                           alt={product.name}
                           className="w-full h-full object-cover"
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Package className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-serif font-semibold text-foreground text-sm truncate">
+                          {product.name}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-primary font-semibold text-sm">
+                            ₹{product.price}
+                          </span>
+                          <span className="text-muted-foreground text-xs line-through">
+                            ₹{product.originalPrice}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-serif font-semibold text-foreground text-sm truncate">
-                        {product?.name ||
-                          `Product #${item.productId.toString()}`}
-                      </h3>
-                      <p className="text-primary font-semibold text-sm mt-0.5">
-                        ₹
-                        {product ? Number(product.price).toLocaleString() : "—"}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Qty: {item.quantity.toString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-foreground">
-                        ₹
-                        {product
-                          ? (
-                              Number(product.price) * Number(item.quantity)
-                            ).toLocaleString()
-                          : "—"}
-                      </p>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Qty: {item.quantity}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <p className="font-semibold text-foreground">
+                          ₹{(product.price * item.quantity).toLocaleString()}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => removeLocalItem(item.productId)}
+                          className="w-6 h-6 rounded-full bg-destructive/10 hover:bg-destructive/20 flex items-center justify-center transition-colors"
+                          aria-label="Remove item"
+                          data-ocid={`cart.delete_button.${idx + 1}`}
+                        >
+                          <X className="w-3 h-3 text-destructive" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Backend Cart Items */}
+            {cartItems && cartItems.length > 0 && (
+              <div className="space-y-3">
+                {cartItems.map((item, idx) => {
+                  const product = getProduct(item.productId);
+                  return (
+                    <motion.div
+                      key={item.productId.toString()}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{
+                        delay: (localCartItems.length + idx) * 0.06,
+                      }}
+                      className="flex items-center gap-4 bg-card rounded-2xl p-4 border border-border shadow-xs"
+                      data-ocid={`cart.item.${localCartItems.length + idx + 1}`}
+                    >
+                      <div className="w-16 h-16 rounded-xl bg-secondary/30 overflow-hidden flex-shrink-0">
+                        {product?.imageUrl ? (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-6 h-6 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-serif font-semibold text-foreground text-sm truncate">
+                          {product?.name ||
+                            `Product #${item.productId.toString()}`}
+                        </h3>
+                        <p className="text-primary font-semibold text-sm mt-0.5">
+                          ₹
+                          {product
+                            ? Number(product.price).toLocaleString()
+                            : "—"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Qty: {item.quantity.toString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-foreground">
+                          ₹
+                          {product
+                            ? (
+                                Number(product.price) * Number(item.quantity)
+                              ).toLocaleString()
+                            : "—"}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
 
             <Separator />
 
@@ -309,12 +402,22 @@ export function CartPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Items ({itemCount})</span>
-                  <span>₹{totalAmount.toLocaleString()}</span>
+                  <span>₹{subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Delivery</span>
-                  <span className="text-green-600 font-medium">Free</span>
+                  {isFreeDelivery ? (
+                    <span className="text-green-600 font-medium">Free 🎉</span>
+                  ) : (
+                    <span>₹{DELIVERY_CHARGE}</span>
+                  )}
                 </div>
+                {!isFreeDelivery && (
+                  <p className="text-xs text-primary/70">
+                    Add ₹{(FREE_DELIVERY_THRESHOLD - subtotal).toLocaleString()}{" "}
+                    more for free delivery
+                  </p>
+                )}
                 <Separator className="my-2" />
                 <div className="flex justify-between font-semibold text-foreground text-base">
                   <span>Total</span>

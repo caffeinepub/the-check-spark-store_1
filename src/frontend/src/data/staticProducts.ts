@@ -6,6 +6,7 @@ export interface StaticProduct {
   originalPrice: number;
   category: string;
   imageUrl: string;
+  images?: string[];
   inStock: boolean;
   rating?: number;
   reviewCount?: number;
@@ -63,5 +64,35 @@ export const STATIC_PRODUCTS: StaticProduct[] = [
     inStock: true,
     rating: 3.7,
     reviewCount: 5,
+  },
+  {
+    id: "static-bracelet-1",
+    name: "Rose Gold Crystal Bracelet",
+    description:
+      "Stunning rose gold bracelet with sparkling cushion-cut crystals set in a delicate chain. Magnetic lock for easy wear. A perfect everyday luxury piece.",
+    price: 129,
+    originalPrice: 160,
+    category: "bracelets",
+    imageUrl: "/assets/uploads/IMG_20250621_152213-1.jpg",
+    images: [
+      "/assets/uploads/IMG_20250621_152213-1.jpg",
+      "/assets/uploads/IMG_20250621_152338-2.jpg",
+    ],
+    inStock: true,
+    rating: 4.2,
+    reviewCount: 8,
+  },
+  {
+    id: "static-ear-studs-1",
+    name: "Korean Crystal Ear Studs",
+    description:
+      "Elegant Korean-style ear studs set featuring rose gold crystal studs, pearl studs, and a beautiful flower cluster stud -- a versatile trio for everyday and occasion wear.",
+    price: 89,
+    originalPrice: 120,
+    category: "earrings",
+    imageUrl: "/assets/uploads/IMG_20250621_175107-1.jpg",
+    inStock: true,
+    rating: 4.3,
+    reviewCount: 9,
   },
 ];

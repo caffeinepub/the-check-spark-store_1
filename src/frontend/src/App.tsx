@@ -10,6 +10,7 @@ import {
 import React from "react";
 import { CherryBlossomPetals } from "./components/CherryBlossomPetals";
 import { Sidebar } from "./components/Sidebar";
+import { LocalCartProvider, useLocalCart } from "./context/LocalCartContext";
 import { useActor } from "./hooks/useActor";
 import { AboutPage } from "./pages/AboutPage";
 import { AdminPage } from "./pages/AdminPage";
@@ -20,6 +21,7 @@ import { ProductDetailPage } from "./pages/ProductDetailPage";
 
 function AppShell() {
   const { actor, isFetching } = useActor();
+  const { localCartCount } = useLocalCart();
 
   const { data: cartItems } = useQuery({
     queryKey: ["cart"],
@@ -31,8 +33,10 @@ function AppShell() {
     refetchInterval: 30000,
   });
 
-  const cartCount =
+  const backendCartCount =
     cartItems?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0;
+
+  const cartCount = backendCartCount + localCartCount;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -104,9 +108,9 @@ declare module "@tanstack/react-router" {
 
 export default function App() {
   return (
-    <>
+    <LocalCartProvider>
       <RouterProvider router={router} />
       <Toaster position="bottom-right" />
-    </>
+    </LocalCartProvider>
   );
 }
